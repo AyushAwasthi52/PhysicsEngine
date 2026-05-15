@@ -1,28 +1,19 @@
+#include "platform/Window.h"
+#include "renderer/VulkanContext.h"
+
 #include <SDL3/SDL.h>
 
 int main()
 {
-    if (!SDL_Init(SDL_INIT_VIDEO))
-    {
-        SDL_Log("Init failed: %s", SDL_GetError());
+    Window window("PhysicsEngine2D", 1280, 720);
+
+    if (!window.Init())
         return -1;
-    }
 
-    SDL_Window* window = SDL_CreateWindow(
-        "TEST WINDOW",
-        1280,
-        720,
-        0
-    );
+    VulkanContext renderer;
 
-    if (!window)
-    {
-        SDL_Log("Window failed: %s", SDL_GetError());
+    if (!renderer.Init(window))
         return -1;
-    }
-
-    SDL_Renderer* renderer =
-        SDL_CreateRenderer(window, nullptr);
 
     bool running = true;
 
@@ -36,14 +27,14 @@ int main()
                 running = false;
         }
 
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_RenderClear(renderer);
-        SDL_RenderPresent(renderer);
+        renderer.BeginFrame();
+
+        // Draw calls here later
+
+        renderer.EndFrame();
     }
 
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    renderer.Shutdown();
 
     return 0;
 }
