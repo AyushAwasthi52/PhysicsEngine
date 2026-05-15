@@ -1,9 +1,11 @@
+#pragma once
+
 #include "Vec2.h"
 #include <vector>
 #include "RigidBody.h"
 #include <memory>
-#include <CollisionDetector.h>
-#include <CollisionResolver.h>
+#include "CollisionDetector.h"
+#include "CollisionResolver.h"
 
 class PhysicsWorld {
 public:

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Vec2.h"
 #include "AABB.h"
 #include <memory>

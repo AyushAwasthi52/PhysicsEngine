@@ -1,6 +1,9 @@
+#pragma once
+
 #include "AABB.h"
 #include "Vec2.h"
 #include <vector>
+#include <cmath>
 
 
 enum class ShapeType { CIRCLE, POLYGON };

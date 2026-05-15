@@ -1,4 +1,4 @@
-#include <Shape.h>
+#include "Shape.h"
 #include <algorithm>
 
 Polygon Polygon::convexHull(std::vector<Vec2> pts) {
@@ -26,4 +26,24 @@ Polygon Polygon::convexHull(std::vector<Vec2> pts) {
     Polygon poly;
     poly.localVertices = hull;
     return poly;
+}
+
+float Polygon::computeArea() const
+{
+    return 0.0f;
+}
+
+float Polygon::computeInertia(float mass) const
+{
+    return 0.0f;
+}
+
+AABB Polygon::computeAABB(Vec2 pos, float rot) const
+{
+    return { pos, pos };
+}
+
+std::vector<Vec2> Polygon::worldVertices(Vec2 pos, float rot) const
+{
+    return localVertices;
 }

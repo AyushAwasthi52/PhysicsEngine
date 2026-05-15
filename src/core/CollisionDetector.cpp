@@ -18,27 +18,6 @@ bool CollisionDetector::circleCircle(
     return true;
 }
 
-// Returns the minimum overlap and best axis among all edge normals of 'poly'
-float satQueryFaceDirections(const Polygon* poly, const Polygon* other,
-    Vec2 posA, float rotA, Vec2 posB, float rotB, int& bestFace) {
-
-    auto vA = poly->worldVertices(posA, rotA);
-    auto vB = other->worldVertices(posB, rotB);
-    float maxSep = -FLT_MAX;
-
-    for (int i = 0; i < (int)vA.size(); ++i) {
-        Vec2 edge   = vA[(i+1)%vA.size()] - vA[i];
-        Vec2 normal = edge.perp().normalized(); // outward face normal
-
-        // Find support point on other polygon (most negative along normal)
-        float minDot = FLT_MAX;
-        for (auto& v : vB) minDot = std::min(minDot, normal.dot(v - vA[i]));
-
-        if (minDot > maxSep) { maxSep = minDot; bestFace = i; }
-    }
-    return maxSep; // positive = separating, negative = overlapping
-}
-
 bool CollisionDetector::polygonPolygon(
     RigidBody* a, RigidBody* b, Manifold& m) {
     auto* pA = static_cast<Polygon*>(a->shape.get());
