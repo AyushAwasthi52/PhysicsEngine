@@ -16,12 +16,20 @@ bool VulkanContext::Init(Window& window)
 
     if (!PickPhysicalDevice())
         return false;
+    
+    if (!CreateLogicalDevice())
+        return false;
 
     return true;
 }
 
 void VulkanContext::Shutdown()
 {
+    if (m_Device)
+    {
+        vkDestroyDevice(m_Device, nullptr);
+    }
+
     if (m_Surface)
     {
         vkDestroySurfaceKHR(
@@ -131,30 +139,60 @@ bool VulkanContext::PickPhysicalDevice()
         devices.data()
     );
 
+    VkPhysicalDevice bestDevice = VK_NULL_HANDLE;
+
     for (const auto& device : devices)
     {
         QueueFamilyIndices indices =
             FindQueueFamilies(device);
 
-        if (indices.IsComplete())
+        if (!indices.IsComplete())
+            continue;
+
+        VkPhysicalDeviceProperties props;
+        vkGetPhysicalDeviceProperties(device, &props);
+
+        std::cout << "Found GPU: "
+                  << props.deviceName
+                  << std::endl;
+
+        // Prefer dedicated GPUs
+        if (props.deviceType
+            == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         {
-            m_PhysicalDevice = device;
+            bestDevice = device;
 
-            VkPhysicalDeviceProperties props;
-            vkGetPhysicalDeviceProperties(device, &props);
+            // IMPORTANT
+            m_QueueIndices = indices;
 
-            std::cout << "Selected GPU: "
+            std::cout << "Selected Dedicated GPU: "
                       << props.deviceName
                       << std::endl;
 
-            return true;
+            break;
+        }
+
+        // fallback if no dedicated GPU found
+        if (bestDevice == VK_NULL_HANDLE)
+        {
+            bestDevice = device;
+
+            // IMPORTANT
+            m_QueueIndices = indices;
         }
     }
 
-    std::cerr << "No suitable GPU found!"
-              << std::endl;
+    if (bestDevice == VK_NULL_HANDLE)
+    {
+        std::cerr << "No suitable GPU found!"
+                  << std::endl;
 
-    return false;
+        return false;
+    }
+
+    m_PhysicalDevice = bestDevice;
+
+    return true;
 }
 
 QueueFamilyIndices VulkanContext::FindQueueFamilies(
@@ -212,3 +250,83 @@ QueueFamilyIndices VulkanContext::FindQueueFamilies(
     return indices;
 }
 
+bool VulkanContext::CreateLogicalDevice()
+{
+    float queuePriority = 1.0f;
+
+    std::vector<VkDeviceQueueCreateInfo> queueInfos;
+
+    std::vector<uint32_t> uniqueQueues =
+    {
+        m_QueueIndices.graphicsFamily.value(),
+        m_QueueIndices.presentFamily.value()
+    };
+
+    // remove duplicate if same queue family
+    std::sort(uniqueQueues.begin(), uniqueQueues.end());
+
+    uniqueQueues.erase(
+        std::unique(uniqueQueues.begin(),
+                    uniqueQueues.end()),
+        uniqueQueues.end()
+    );
+
+    for (uint32_t queueFamily : uniqueQueues)
+    {
+        VkDeviceQueueCreateInfo queueInfo{};
+        queueInfo.sType =
+            VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+
+        queueInfo.queueFamilyIndex = queueFamily;
+        queueInfo.queueCount = 1;
+        queueInfo.pQueuePriorities = &queuePriority;
+
+        queueInfos.push_back(queueInfo);
+    }
+
+    VkPhysicalDeviceFeatures features{};
+
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType =
+        VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+    createInfo.queueCreateInfoCount =
+        static_cast<uint32_t>(queueInfos.size());
+
+    createInfo.pQueueCreateInfos =
+        queueInfos.data();
+
+    createInfo.pEnabledFeatures = &features;
+
+    if (vkCreateDevice(
+            m_PhysicalDevice,
+            &createInfo,
+            nullptr,
+            &m_Device)
+        != VK_SUCCESS)
+    {
+        std::cerr << "Failed to create logical device!"
+                  << std::endl;
+
+        return false;
+    }
+
+    vkGetDeviceQueue(
+        m_Device,
+        m_QueueIndices.graphicsFamily.value(),
+        0,
+        &m_GraphicsQueue
+    );
+
+    vkGetDeviceQueue(
+        m_Device,
+        m_QueueIndices.presentFamily.value(),
+        0,
+        &m_PresentQueue
+    );
+
+    std::cout << "Logical Device Created!"
+              << std::endl;
+
+    return true;
+}
