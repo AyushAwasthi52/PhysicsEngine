@@ -14,6 +14,9 @@ bool VulkanContext::Init(Window& window)
     if (!CreateSurface(window))
         return false;
 
+    if (!PickPhysicalDevice())
+        return false;
+
     return true;
 }
 
@@ -101,3 +104,111 @@ void VulkanContext::BeginFrame()
 void VulkanContext::EndFrame()
 {
 }
+
+bool VulkanContext::PickPhysicalDevice()
+{
+    uint32_t deviceCount = 0;
+
+    vkEnumeratePhysicalDevices(
+        m_Instance,
+        &deviceCount,
+        nullptr
+    );
+
+    if (deviceCount == 0)
+    {
+        std::cerr << "No Vulkan GPUs found!"
+                  << std::endl;
+
+        return false;
+    }
+
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+
+    vkEnumeratePhysicalDevices(
+        m_Instance,
+        &deviceCount,
+        devices.data()
+    );
+
+    for (const auto& device : devices)
+    {
+        QueueFamilyIndices indices =
+            FindQueueFamilies(device);
+
+        if (indices.IsComplete())
+        {
+            m_PhysicalDevice = device;
+
+            VkPhysicalDeviceProperties props;
+            vkGetPhysicalDeviceProperties(device, &props);
+
+            std::cout << "Selected GPU: "
+                      << props.deviceName
+                      << std::endl;
+
+            return true;
+        }
+    }
+
+    std::cerr << "No suitable GPU found!"
+              << std::endl;
+
+    return false;
+}
+
+QueueFamilyIndices VulkanContext::FindQueueFamilies(
+    VkPhysicalDevice device)
+{
+    QueueFamilyIndices indices;
+
+    uint32_t queueFamilyCount = 0;
+
+    vkGetPhysicalDeviceQueueFamilyProperties(
+        device,
+        &queueFamilyCount,
+        nullptr
+    );
+
+    std::vector<VkQueueFamilyProperties> families(
+        queueFamilyCount
+    );
+
+    vkGetPhysicalDeviceQueueFamilyProperties(
+        device,
+        &queueFamilyCount,
+        families.data()
+    );
+
+    int i = 0;
+
+    for (const auto& family : families)
+    {
+        if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        {
+            indices.graphicsFamily = i;
+        }
+
+        VkBool32 presentSupport = false;
+
+        vkGetPhysicalDeviceSurfaceSupportKHR(
+            device,
+            i,
+            m_Surface,
+            &presentSupport
+        );
+
+        if (presentSupport)
+        {
+            indices.presentFamily = i;
+        }
+
+        if (indices.IsComplete())
+            break;
+
+        i++;
+    }
+
+    return indices;
+}
+
