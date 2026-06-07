@@ -19,6 +19,9 @@ bool VulkanContext::Init(Window& window)
     
     if (!CreateLogicalDevice())
         return false;
+    
+    if (!CreateSwapchain())
+        return false;
 
     return true;
 }

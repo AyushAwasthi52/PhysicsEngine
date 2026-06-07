@@ -6,6 +6,13 @@
 #include <vector>
 #include <algorithm>
 
+struct SwapchainSupportDetails
+{
+    VkSurfaceCapabilitiesKHR capabilities;
+
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+};
 struct QueueFamilyIndices
 {
     std::optional<uint32_t> graphicsFamily;
@@ -30,11 +37,22 @@ public:
     void EndFrame();
 
 private:
-    bool CreateInstance();
-    bool CreateSurface(Window& window);
-    bool PickPhysicalDevice();
-    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
-    bool CreateLogicalDevice();
+bool CreateInstance();
+bool CreateSurface(Window& window);
+bool PickPhysicalDevice();
+QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+bool CreateLogicalDevice();
+
+private:
+    bool CreateSwapchain();
+    SwapchainSupportDetails QuerySwapchainSupport(
+        VkPhysicalDevice device);
+    VkSurfaceFormatKHR ChooseSurfaceFormat(
+        const std::vector<VkSurfaceFormatKHR>& formats);
+    VkPresentModeKHR ChoosePresentMode(
+        const std::vector<VkPresentModeKHR>& modes);
+    VkExtent2D ChooseExtent(
+        const VkSurfaceCapabilitiesKHR& capabilities);
 
 private:
     VkInstance m_Instance = VK_NULL_HANDLE;
@@ -46,4 +64,10 @@ private:
     VkQueue m_PresentQueue  = VK_NULL_HANDLE;
 
     QueueFamilyIndices m_QueueIndices;
+
+private:
+    VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
+    std::vector<VkImage> m_SwapchainImages;
+    VkFormat m_SwapchainImageFormat;
+    VkExtent2D m_SwapchainExtent;
 };
