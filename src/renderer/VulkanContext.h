@@ -76,4 +76,10 @@ private:
 
 public:
     bool CreateImageViews();
+
+private:
+    bool CreateRenderPass();
+
+private:
+    VkRenderPass m_RenderPass = VK_NULL_HANDLE;
 };
