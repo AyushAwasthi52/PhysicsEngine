@@ -22,17 +22,38 @@ bool VulkanContext::Init(Window& window)
     
     if (!CreateSwapchain())
         return false;
+    
+    if (!CreateImageViews())
+        return false;
 
     return true;
 }
 
 void VulkanContext::Shutdown()
 {
+    for (auto imageView : m_SwapchainImageViews)
+    {
+        vkDestroyImageView(
+            m_Device,
+            imageView,
+            nullptr
+        );
+    }
+    if (m_Swapchain)
+    {
+        vkDestroySwapchainKHR(
+            m_Device,
+            m_Swapchain,
+            nullptr
+        );
+    }
     if (m_Device)
     {
-        vkDestroyDevice(m_Device, nullptr);
+        vkDestroyDevice(
+            m_Device,
+            nullptr
+        );
     }
-
     if (m_Surface)
     {
         vkDestroySurfaceKHR(
@@ -41,10 +62,12 @@ void VulkanContext::Shutdown()
             nullptr
         );
     }
-
     if (m_Instance)
     {
-        vkDestroyInstance(m_Instance, nullptr);
+        vkDestroyInstance(
+            m_Instance,
+            nullptr
+        );
     }
 }
 
@@ -582,6 +605,69 @@ bool VulkanContext::CreateSwapchain()
     m_SwapchainExtent = extent;
 
     std::cout << "Swapchain Created!"
+              << std::endl;
+
+    return true;
+}
+
+bool VulkanContext::CreateImageViews()
+{
+    m_SwapchainImageViews.resize(
+        m_SwapchainImages.size()
+    );
+
+    for (size_t i = 0; i < m_SwapchainImages.size(); i++)
+    {
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType =
+            VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+
+        createInfo.image =
+            m_SwapchainImages[i];
+
+        createInfo.viewType =
+            VK_IMAGE_VIEW_TYPE_2D;
+
+        createInfo.format =
+            m_SwapchainImageFormat;
+
+        createInfo.components.r =
+            VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        createInfo.components.g =
+            VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        createInfo.components.b =
+            VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        createInfo.components.a =
+            VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        createInfo.subresourceRange.aspectMask =
+            VK_IMAGE_ASPECT_COLOR_BIT;
+
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(
+                m_Device,
+                &createInfo,
+                nullptr,
+                &m_SwapchainImageViews[i])
+            != VK_SUCCESS)
+        {
+            std::cerr
+                << "Failed to create image view!"
+                << std::endl;
+
+            return false;
+        }
+    }
+
+    std::cout << "Image Views Created!"
               << std::endl;
 
     return true;

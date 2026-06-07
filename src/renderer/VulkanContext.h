@@ -37,11 +37,11 @@ public:
     void EndFrame();
 
 private:
-bool CreateInstance();
-bool CreateSurface(Window& window);
-bool PickPhysicalDevice();
-QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
-bool CreateLogicalDevice();
+    bool CreateInstance();
+    bool CreateSurface(Window& window);
+    bool PickPhysicalDevice();
+    QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device);
+    bool CreateLogicalDevice();
 
 private:
     bool CreateSwapchain();
@@ -70,4 +70,10 @@ private:
     std::vector<VkImage> m_SwapchainImages;
     VkFormat m_SwapchainImageFormat;
     VkExtent2D m_SwapchainExtent;
+
+private:
+    std::vector<VkImageView> m_SwapchainImageViews;
+
+public:
+    bool CreateImageViews();
 };
